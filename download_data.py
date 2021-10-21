@@ -9,10 +9,11 @@ print(fo.config.default_ml_backend)
 
 dataset = fo.zoo.load_zoo_dataset(
     "coco-2017",
-    split="train",
+    split="test",
     label_types=["detections", "segmentations"],
-    max_samples=0000
+    max_samples=5000
 )
 dataset.persistent = True
 
 session = fo.launch_app(dataset)
+session.wait()
