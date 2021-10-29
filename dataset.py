@@ -49,13 +49,7 @@ class COCOCaptionDataset(Dataset):
 
 
 if __name__=="__main__":
-    with open(os.path.join(COCO_PATH, "raw", "captions_train2017.json")) as jf:
-        captions = json.load(jf)["images"]
-
-    print(captions[1])
-    print(len("000000522418"))
-    t=time()
+    
     dataset = COCOCaptionDataset(COCO_PATH, "train")
-    print("Time", time()-t)
     print(dataset.__getitem__(0))
-    # print(dataset.captions.index)
+    
