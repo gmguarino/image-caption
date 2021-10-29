@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from time import time
 import json
 import os
+
+from torchvision import transforms
 load_dotenv("PATHS.env")
 
 COCO_PATH = os.environ.get("COCO_PATH")
@@ -34,6 +36,13 @@ class COCOCaptionDataset(Dataset):
         # Selection of the annotations for images present in the dataset
         self.annotations = self.annotations.loc[self.annotations.image_file.isin(self.image_list)].reset_index()
 
+        self.transforms = transforms.Compose([
+            transforms.Resize(299),
+            transforms.CenterCrop(299),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+
         super().__init__()
 
     def __len__(self):
@@ -45,7 +54,7 @@ class COCOCaptionDataset(Dataset):
         filepath = os.path.join(self.coco_path, self.split, "data", image_file)
         # return caption and PIL image
         image = Image.open(filepath)
-        return caption, image
+        return caption, self.transforms(image)
 
 
 if __name__=="__main__":

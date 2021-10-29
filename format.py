@@ -1,11 +1,14 @@
 from json import load
-import fiftyone as fo
 import os
 
 from dotenv import load_dotenv
+from torch.utils.data import DataLoader
 from model import PreprocessorCNN
+from dataset import COCOCaptionDataset
 
 load_dotenv("PATHS.env")
+COCO_PATH = os.environ.get("COCO_PATH")
+
 
 # Place all dir paths in .env file
 # create instance for preprocessor inception model
@@ -14,20 +17,24 @@ load_dotenv("PATHS.env")
 # Cache images in data folder
 
 def get_preprocessor():
-    pass
+    preprocessor = PreprocessorCNN()
+    preprocessor.eval()
+    return preprocessor
 
-def get_fiftyone_dataset(name="coco-2017", split="train"):
-    dataset = fo.Dataset.from_dir(
-        name=name,
-        dataset_dir=os.path.join(os.getenv("COCO_PATH"), split),
-        # dataset_type=fo.types.COCODetectionDataset
-        dataset_type=fo.types.COCODetectionDataset
-
-    )
-    return dataset
+def get_dataloader():
+    dataset = COCOCaptionDataset(COCO_PATH, "train")
+    loader = DataLoader(dataset)
+    return loader
+    
 
 def preprocess():
     pass
 
 def chache():
     pass
+
+
+if __name__=="__main__":
+    loader = get_dataloader()
+    preprocessor = get_preprocessor()
+    print(next(loader.__iter__()))
