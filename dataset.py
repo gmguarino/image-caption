@@ -4,6 +4,8 @@ import pandas as pd
 from PIL import Image
 from torch.utils import data
 from torch.utils.data import Dataset, DataLoader
+from torchtext.data.utils import get_tokenizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from dotenv import load_dotenv
 from time import time
@@ -36,7 +38,20 @@ class COCOCaptionDataset(Dataset):
         # Selection of the annotations for images present in the dataset
         self.annotations = self.annotations.loc[self.annotations.image_file.isin(self.image_list)].reset_index()
 
-        self.transforms = transforms.Compose([
+        # setup pytorch tokenizer and a TDIDF vectorizer using maximum 5000 features
+        self.tokenizer = get_tokenizer("basic_english")
+        self.tdif = TfidfVectorizer(tokenizer=self.tokenizer, max_features=5000, 
+            stop_words=list('!"#$%&()*+.,-/:;=?@[\]^_`{|}~'))
+
+        # Processing of caption data
+        # Stripping unnecessary characters 
+        # self.annotations["vector_caption"] = self.annotations["caption"].map(
+        #     lambda x: x.strip('!"#$%&()*+.,-/:;=?@[\]^_`{|}~')
+        # )
+        # Vectorize
+        self.annotations["vector_caption"] = self.tdif.fit_transform(self.annotations["caption"])
+        self.caption_tranforms = transforms.ToTensor()
+        self.image_transforms = transforms.Compose([
             transforms.Resize(299),
             transforms.CenterCrop(299),
             transforms.ToTensor(),
@@ -48,13 +63,28 @@ class COCOCaptionDataset(Dataset):
     def __len__(self):
         return len(self.image_list)
 
+    @staticmethod
+    def spy_sparse2torch_sparse(data):
+        """
+
+        :param data: a scipy sparse csr matrix
+        :return: a sparse torch tensor
+        """
+        samples=data.shape[0]
+        features=data.shape[1]
+        values=data.data
+        coo_data=data.tocoo()
+        indices=torch.LongTensor([coo_data.row,coo_data.col])
+        t=torch.sparse.FloatTensor(indices,torch.from_numpy(values).float(),[samples,features])
+        return t
+
     def __getitem__(self, index):
-        caption = self.annotations.loc[index, "caption"]
+        caption = self.annotations.loc[index, "vector_caption"]
         image_file = self.annotations.loc[index, "image_file"]
         filepath = os.path.join(self.coco_path, self.split, "data", image_file)
         # return caption and PIL image
         image = Image.open(filepath)
-        return caption, self.transforms(image)
+        return caption, self.image_transforms(image)
 
 
 if __name__=="__main__":
