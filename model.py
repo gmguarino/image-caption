@@ -27,7 +27,6 @@ class Identity(nn.Module):
 class PreprocessorCNN(nn.Module):
     
     def __init__(self):
-        super().__init__()
         self.preprocess = transforms.Compose([
             transforms.Resize(299),
             transforms.CenterCrop(299),
@@ -37,6 +36,7 @@ class PreprocessorCNN(nn.Module):
         self.backbone = torch.hub.load('pytorch/vision:v0.10.0', 'inception_v3', pretrained=True)
         # Overriding fc layer with Identity layer
         self.backbone.fc = Identity()
+        super().__init__()
 
     def forward(self, x):
         return self.backbone(self.preprocess(x))
